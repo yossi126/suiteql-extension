@@ -1,0 +1,73 @@
+{
+  "name": "suiteql-extension",
+  "displayName": "SuiteQL Extension",
+  "description": "Run SuiteQL queries in NetSuite from VS Code.",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "activationEvents": [
+    "onCommand:suiteql.chooseAccount",
+    "onCommand:suiteql.runQuery",
+    "onCommand:suiteql.openEditor",
+    "onView:suiteqlView",
+    "onCommand:suiteql.openAccountsConfig"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "suiteql.chooseAccount",
+        "title": "SuiteQL: Choose Account"
+      },
+      {
+        "command": "suiteql.runQuery",
+        "title": "Run SuiteQL Query"
+      },
+      {
+        "command": "suiteql.openEditor",
+        "title": "Open SuiteQL in New Tab"
+      },
+      {
+        "command": "suiteql.openAccountsConfig",
+        "title": "SuiteQL: Open Accounts Config"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "suiteqlExplorer",
+          "title": "SuiteQL",
+          "icon": "resources/suiteql.svg"
+        }
+      ]
+    },
+    "views": {
+      "suiteqlExplorer": [
+        {
+          "type": "webview",
+          "id": "suiteqlView",
+          "name": "SuiteQL Query",
+          "icon": "resources/suiteql.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "suiteql.openEditor",
+          "when": "view == 'suiteqlView'",
+          "group": "navigation",
+          "icon": {
+            "light": "resources/open.svg",
+            "dark": "resources/open.svg"
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "oauth-1.0a": "^2.2.6"
+  }
+}

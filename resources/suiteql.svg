@@ -1,0 +1,8 @@
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Magnifying glass circle -->
+  <circle cx="10" cy="10" r="8" stroke="#000" stroke-width="2" fill="none" />
+  <!-- Magnifying glass handle -->
+  <line x1="15" y1="15" x2="21" y2="21" stroke="#000" stroke-width="2" />
+  <!-- Letter S for SuiteQL -->
+  <text x="10" y="14" font-family="Arial, sans-serif" font-size="10" fill="#000" text-anchor="middle">S</text>
+</svg>
