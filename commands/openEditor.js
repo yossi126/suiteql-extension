@@ -9,8 +9,8 @@ function openEditor(context, viewProvider) {
     { enableScripts: true, retainContextWhenHidden: true }
   );
 
-  viewProvider.webview = panel;
-  viewProvider._render();
+  viewProvider.setTabPanel(panel);
+
 
   panel.webview.onDidReceiveMessage(msg => {
     if (msg.command === 'runQuery') {
@@ -23,9 +23,11 @@ function openEditor(context, viewProvider) {
         } catch (err) {
           entry.error = err.message;
         }
-        const history = context.workspaceState.get('suiteql.history', []);
+        const currentId = context.globalState.get('suiteql.current');
+        const key = `suiteql.history.${currentId}`;
+        const history = context.workspaceState.get(key, []);
         history.push(entry);
-        await context.workspaceState.update('suiteql.history', history);
+        await context.workspaceState.update(key, history);
         viewProvider._render();
       })();
     }

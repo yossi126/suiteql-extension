@@ -12,33 +12,108 @@ function getNonce() {
 class SuiteQLViewProvider {
   constructor(context) {
     this.context = context;
+    this.sidePanelView = null;
+    this.tabPanelView = null;
   }
 
   resolveWebviewView(webviewView) {
-    this.webview = webviewView;
+    this.sidePanelView = webviewView;
     webviewView.webview.options = { enableScripts: true };
     this._render();
 
-    webviewView.webview.onDidReceiveMessage(async msg => {
-      if (msg.command === 'runQuery') {
-        this.webview.webview.postMessage({ command: 'loading' });
-        let entry = { query: msg.query };
-        try {
-          entry.result = await sendSignedRequestWithAccount(this.context, msg.query);
-        } catch (err) {
-          entry.error = err.message;
-        }
-        const history = this.context.workspaceState.get('suiteql.history', []);
-        history.push(entry);
-        await this.context.workspaceState.update('suiteql.history', history);
-        this._render();
-      }
+    webviewView.onDidDispose(() => {
+      this.sidePanelView = null;
+    });
+
+    webviewView.webview.onDidReceiveMessage(msg => {
+      if (msg.command === 'runQuery') this._handleQuery(msg.query);
     });
   }
 
+  setTabPanel(panel) {
+    this.tabPanelView = panel;
+    panel.webview.options = { enableScripts: true };
+    this._render();
+
+    panel.onDidDispose(() => {
+      this.tabPanelView = null;
+    });
+
+    panel.webview.onDidReceiveMessage(msg => {
+      if (msg.command === 'runQuery') this._handleQuery(msg.query);
+    });
+  }
+
+  async _handleQuery(query) {
+    const currentId = this.context.globalState.get('suiteql.current');
+    const key = `suiteql.history.${currentId}`;
+    const entry = { query };
+
+    this._postMessageAll({ command: 'loading' });
+
+    try {
+      entry.result = await sendSignedRequestWithAccount(this.context, query);
+    } catch (err) {
+      entry.error = err.message;
+    }
+
+    const history = this.context.workspaceState.get(key, []);
+    history.push(entry);
+    await this.context.workspaceState.update(key, history);
+
+    this._render();
+    this._postMessageAll({ command: 'showResults' });
+  }
+
+  _postMessageAll(msg) {
+    if (this.sidePanelView?.webview) {
+      try {
+        this.sidePanelView.webview.postMessage(msg);
+      } catch (e) {
+        console.warn('⚠️ sidePanelView.postMessage failed:', e.message);
+        this.sidePanelView = null;
+      }
+    }
+
+    if (this.tabPanelView?.webview) {
+      try {
+        this.tabPanelView.webview.postMessage(msg);
+      } catch (e) {
+        console.warn('⚠️ tabPanelView.postMessage failed:', e.message);
+        this.tabPanelView = null;
+      }
+    }
+  }
+
   _render() {
-    const history = this.context.workspaceState.get('suiteql.history', []);
-    this.webview.webview.html = this._getHtml(history);
+    const currentId = this.context.globalState.get('suiteql.current');
+    const key = `suiteql.history.${currentId}`;
+    const history = this.context.workspaceState.get(key, []);
+    const html = this._getHtml(history);
+
+    if (this.sidePanelView?.webview) {
+      try {
+        this.sidePanelView.webview.html = html;
+      } catch (e) {
+        console.warn('⚠️ sidePanelView render failed:', e.message);
+        this.sidePanelView = null;
+      }
+    }
+
+    if (this.tabPanelView?.webview) {
+      try {
+        this.tabPanelView.webview.html = html;
+      } catch (e) {
+        console.warn('⚠️ tabPanelView render failed:', e.message);
+        this.tabPanelView = null;
+      }
+    }
+  }
+
+  renderAndShowAddAccount(context, existingAccount = null) {
+    this._render();
+    const { showAddAccountWebview } = require('./commands/chooseAccount');
+    showAddAccountWebview(context, existingAccount, this);
   }
 
 
@@ -154,13 +229,18 @@ class SuiteQLViewProvider {
   }
 }
 
+let globalSuiteQLViewProvider;
+
+
 function activate(context) {
   const provider = new SuiteQLViewProvider(context);
+  globalSuiteQLViewProvider = provider;
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('suiteqlView', provider),
     vscode.commands.registerCommand('suiteql.runQuery', () => runQuery(context)),
-    vscode.commands.registerCommand('suiteql.chooseAccount', () => chooseAccount(context)),
+    vscode.commands.registerCommand('suiteql.chooseAccount', () => chooseAccount(context, provider)),
+    vscode.commands.registerCommand('suiteql.chooseAccountGear', () => chooseAccount(context, provider)),
     vscode.commands.registerCommand('suiteql.openEditor', () => openEditor(context, provider)),
     vscode.commands.registerCommand('suiteql.openAccountsConfig', () => {
       const panel = vscode.window.createWebviewPanel(

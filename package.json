@@ -21,12 +21,16 @@
         "title": "SuiteQL: Choose Account"
       },
       {
+        "command": "suiteql.chooseAccountGear",
+        "title": "⚙️"
+      },
+      {
         "command": "suiteql.runQuery",
         "title": "Run SuiteQL Query"
       },
       {
         "command": "suiteql.openEditor",
-        "title": "Open SuiteQL in New Tab"
+        "title": "📤"
       },
       {
         "command": "suiteql.openAccountsConfig",
@@ -62,12 +66,18 @@
             "light": "resources/open.svg",
             "dark": "resources/open.svg"
           }
+        },
+        {
+          "command": "suiteql.chooseAccountGear",
+          "when": "view == 'suiteqlView'",
+          "group": "navigation"
         }
       ]
     }
   },
   "dependencies": {
     "axios": "^1.8.4",
-    "oauth-1.0a": "^2.2.6"
+    "oauth-1.0a": "^2.2.6",
+    "uuid": "^11.1.0"
   }
 }

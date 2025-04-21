@@ -10,7 +10,7 @@ function loadAccounts(context) {
         const a = JSON.parse(fs.readFileSync(p, 'utf8'));
         accounts = [a];
         context.globalState.update('suiteql.accounts', accounts);
-      } catch {}
+      } catch { }
     }
   }
   return accounts;
@@ -21,9 +21,9 @@ function saveAccounts(context, accounts) {
 }
 
 function getCurrentAccount(context) {
-  const current = context.globalState.get('suiteql.current');
+  const currentId = context.globalState.get('suiteql.current');
   const accounts = context.globalState.get('suiteql.accounts', []);
-  return accounts.find(a => a.account === current) || accounts[0];
+  return accounts.find(a => a.id === currentId) || accounts[0];
 }
 
 module.exports = {
