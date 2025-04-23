@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add/Edit NetSuite Account</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+      padding: 1.5em;
+    }
+    h2 {
+      margin-bottom: 1em;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1em;
+    }
+    input {
+      padding: 0.5em;
+      font-size: 1em;
+      background: #2d2d2d;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+    }
+    input.invalid {
+      border-color: red;
+    }
+    .error {
+      color: red;
+      font-size: 0.8em;
+      display: none;
+    }
+    button {
+      background: #007acc;
+      color: white;
+      border: none;
+      padding: 0.7em 1.2em;
+      cursor: pointer;
+      font-size: 1em;
+      border-radius: 4px;
+    }
+    span.required { color: #e06c75; }
+  </style>
+</head>
+<body>
+  <h2 id="formTitle">Add NetSuite Account</h2>
+  <input type="hidden" id="accountId" value="">
+
+  <label>
+    <span>Display Name</span>
+    <input type="text" id="displayName" />
+  </label>
+
+  <label>
+    <span>Account ID (Realm) <span class="required">*</span></span>
+    <input type="text" id="account" />
+    <small class="error" id="error-account">Account ID is required.</small>
+  </label>
+
+  <label>
+    <span>SuiteQL URL <span class="required">*</span></span>
+    <input type="text" id="url" />
+    <small class="error" id="error-url">URL is required.</small>
+  </label>
+
+  <label>
+    <span>Consumer Key <span class="required">*</span></span>
+    <input type="text" id="consumerKey" />
+    <small class="error" id="error-consumerKey">Consumer Key is required.</small>
+  </label>
+
+  <label>
+    <span>Consumer Secret <span class="required">*</span></span>
+    <input type="text" id="consumerSecret" />
+    <small class="error" id="error-consumerSecret">Consumer Secret is required.</small>
+  </label>
+
+  <label>
+    <span>Token <span class="required">*</span></span>
+    <input type="text" id="token" />
+    <small class="error" id="error-token">Token is required.</small>
+  </label>
+
+  <label>
+    <span>Token Secret <span class="required">*</span></span>
+    <input type="text" id="tokenSecret" />
+    <small class="error" id="error-tokenSecret">Token Secret is required.</small>
+  </label>
+
+  <button onclick="save()">
+    <span id="saveButtonText">Save</span> Account
+  </button>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+    let isEdit = false;
+
+    // listen for edit message
+    window.addEventListener('message', event => {
+      const msg = event.data;
+      if (msg.command === 'editAccount' && msg.account) {
+        isEdit = true;
+        const acct = msg.account;
+        document.getElementById('formTitle').innerText = 'Edit NetSuite Account';
+        document.getElementById('accountId').value = acct.id || '';
+        document.getElementById('displayName').value = acct.displayName || '';
+        document.getElementById('account').value = acct.account || '';
+        document.getElementById('url').value = acct.url || '';
+        document.getElementById('consumerKey').value = acct.consumerKey || '';
+        document.getElementById('consumerSecret').value = acct.consumerSecret || '';
+        document.getElementById('token').value = acct.token || '';
+        document.getElementById('tokenSecret').value = acct.tokenSecret || '';
+        document.getElementById('saveButtonText').innerText = 'Update';
+      }
+    });
+
+    function save() {
+      // validate
+      const required = ['account','url','consumerKey','consumerSecret','token','tokenSecret'];
+      let ok = true;
+      required.forEach(id => {
+        const el = document.getElementById(id);
+        const err = document.getElementById('error-' + id);
+        if (!el.value.trim()) {
+          el.classList.add('invalid');
+          err.style.display = 'block';
+          ok = false;
+        } else {
+          el.classList.remove('invalid');
+          err.style.display = 'none';
+        }
+      });
+      if (!ok) return;
+
+      const data = {
+        id: document.getElementById('accountId').value || crypto.randomUUID(),
+        displayName: document.getElementById('displayName').value.trim() || document.getElementById('account').value.trim(),
+        account: document.getElementById('account').value.trim(),
+        url: document.getElementById('url').value.trim(),
+        consumerKey: document.getElementById('consumerKey').value.trim(),
+        consumerSecret: document.getElementById('consumerSecret').value.trim(),
+        token: document.getElementById('token').value.trim(),
+        tokenSecret: document.getElementById('tokenSecret').value.trim()
+      };
+      vscode.postMessage({ command: 'saveAccount', data });
+    }
+  </script>
+</body>
+</html>
