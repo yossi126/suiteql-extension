@@ -28,7 +28,7 @@ function openEditor(context, viewProvider) {
         const history = context.workspaceState.get(key, []);
         history.push(entry);
         await context.workspaceState.update(key, history);
-        viewProvider._render();
+        // viewProvider._render();
       })();
     }
   });
