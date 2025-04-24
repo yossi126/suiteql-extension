@@ -28,7 +28,12 @@ class SuiteQLViewProvider {
     });
 
     webviewView.webview.onDidReceiveMessage(msg => {
-      if (msg.command === 'runQuery') this._handleQuery(msg.query);
+      if (msg.command === 'runQuery') {
+        this._handleQuery(msg.query);
+      }
+      else if (msg.command === 'deleteEntry') {
+        this._handleDelete(msg.index);
+      }
     });
   }
 
@@ -42,7 +47,12 @@ class SuiteQLViewProvider {
     });
 
     panel.webview.onDidReceiveMessage(msg => {
-      if (msg.command === 'runQuery') this._handleQuery(msg.query);
+      if (msg.command === 'runQuery') {
+        this._handleQuery(msg.query);
+      }
+      else if (msg.command === 'deleteEntry') {
+        this._handleDelete(msg.index);
+      }
     });
   }
 
@@ -65,6 +75,15 @@ class SuiteQLViewProvider {
 
     this._render();
     this._postMessageAll({ command: 'showResults' });
+  }
+
+  async _handleDelete(index) {
+    const currentId = this.context.globalState.get('suiteql.current');
+    const key = `suiteql.history.${currentId}`;
+    const history = this.context.workspaceState.get(key, []);
+    history.splice(index, 1);                                // remove the one entry
+    await this.context.workspaceState.update(key, history); // persist change
+    this._render();                                         // re-draw the view
   }
 
   _postMessageAll(msg) {
@@ -118,8 +137,6 @@ class SuiteQLViewProvider {
     showAddAccountWebview(context, existingAccount, this);
   }
 
-
-
   _getHtml(history) {
     const nonce = getNonce();
 
@@ -154,7 +171,10 @@ class SuiteQLViewProvider {
       }
 
       return `<div class="entry">
-              <div class="query"><strong>Query:</strong> ${q}</div>
+              <div class="query">
+              <strong>Query:</strong> ${q}
+              <button class="delete-btn" onclick="deleteEntry(${i})" title="Delete this query">🗑️</button>
+              </div>
               ${body}
             </div>`;
     }).join('');

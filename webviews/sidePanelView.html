@@ -19,6 +19,17 @@
                border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite;
                display:none; }
     @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+    .delete-btn {
+  background: transparent;
+  border: none;
+  color: #f44747;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 0.9em;
+}
+.delete-btn:hover {
+  color: #ff6e6e;
+}
   </style>
 </head>
 <body>
@@ -68,6 +79,10 @@
       document.getElementById('json-'+i).style.display = 'none';
       document.getElementById('table-'+i).style.display = '';
     }
+
+    function deleteEntry(i) {
+  vscode.postMessage({ command: 'deleteEntry', index: i });
+}
 
     scrollToBottom();
   </script>
