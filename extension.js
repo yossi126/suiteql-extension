@@ -18,10 +18,66 @@ class SuiteQLViewProvider {
     this.tabPanelView = null;
   }
 
+  startThemeListener() {
+    vscode.window.onDidChangeActiveColorTheme((e) => {
+      const isDark = e.kind === vscode.ColorThemeKind.Dark;
+      const theme = isDark ? 'material-darker' : 'eclipse';
+
+      const themeHref = vscode.Uri.joinPath(
+        this.context.extensionUri,
+        'webviews',
+        'codemirror',
+        isDark ? 'material-darker.min.css' : 'eclipse.min.css'
+      );
+
+      // Send to side panel
+      if (this.sidePanelView?.webview) {
+        this.sidePanelView.webview.postMessage({
+          command: 'setTheme',
+          theme: theme,
+          themeHref: this.sidePanelView.webview.asWebviewUri(themeHref).toString()
+        });
+      }
+
+      // Send to tab panel
+      if (this.tabPanelView?.webview) {
+        this.tabPanelView.webview.postMessage({
+          command: 'setTheme',
+          theme: theme,
+          themeHref: this.tabPanelView.webview.asWebviewUri(themeHref).toString()
+        });
+      }
+    });
+  }
+
+
+
   resolveWebviewView(webviewView) {
     this.sidePanelView = webviewView;
-    webviewView.webview.options = { enableScripts: true };
-    this._render();
+
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(this.context.extensionUri, 'webviews'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'resources'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror')
+      ]
+    };
+
+    this._render(); // <-- this loads the HTML
+
+    // 🆕 Now immediately send the theme after loading
+    const isDarkTheme = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const theme = isDarkTheme ? 'material-darker' : 'eclipse';
+    const themeHref = isDarkTheme
+      ? vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror', 'material-darker.min.css')
+      : vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror', 'eclipse.min.css');
+
+    webviewView.webview.postMessage({
+      command: 'setTheme',
+      theme: theme,
+      themeHref: webviewView.webview.asWebviewUri(themeHref).toString()
+    });
 
     webviewView.onDidDispose(() => {
       this.sidePanelView = null;
@@ -30,17 +86,42 @@ class SuiteQLViewProvider {
     webviewView.webview.onDidReceiveMessage(msg => {
       if (msg.command === 'runQuery') {
         this._handleQuery(msg.query);
-      }
-      else if (msg.command === 'deleteEntry') {
+      } else if (msg.command === 'deleteEntry') {
         this._handleDelete(msg.index);
+        vscode.window.showInformationMessage('Query deleted successfully.');
+      } else if (msg.command === 'copyQuery') {
+        vscode.window.showInformationMessage(msg.message);
       }
     });
+
   }
+
 
   setTabPanel(panel) {
     this.tabPanelView = panel;
-    panel.webview.options = { enableScripts: true };
+
+    panel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(this.context.extensionUri, 'webviews'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'resources'),
+        vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror')
+      ]
+    };
+
     this._render();
+
+    const isDarkTheme = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const theme = isDarkTheme ? 'material-darker' : 'eclipse';
+    const themeHref = isDarkTheme
+      ? vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror', 'material-darker.min.css')
+      : vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror', 'eclipse.min.css');
+
+    panel.webview.postMessage({
+      command: 'setTheme',
+      theme: theme,
+      themeHref: panel.webview.asWebviewUri(themeHref).toString()
+    });
 
     panel.onDidDispose(() => {
       this.tabPanelView = null;
@@ -49,12 +130,14 @@ class SuiteQLViewProvider {
     panel.webview.onDidReceiveMessage(msg => {
       if (msg.command === 'runQuery') {
         this._handleQuery(msg.query);
-      }
-      else if (msg.command === 'deleteEntry') {
+      } else if (msg.command === 'deleteEntry') {
         this._handleDelete(msg.index);
+      } else if (msg.command === 'copyQuery') {
+        vscode.window.showInformationMessage(msg.message);
       }
     });
   }
+
 
   async _handleQuery(query) {
     const currentId = this.context.globalState.get('suiteql.current');
@@ -115,6 +198,23 @@ class SuiteQLViewProvider {
     if (this.sidePanelView?.webview) {
       try {
         this.sidePanelView.webview.html = html;
+
+        // 🆕 Immediately send current theme again after reloading HTML
+        const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+        const theme = isDark ? 'material-darker' : 'eclipse';
+        const themeHref = vscode.Uri.joinPath(
+          this.context.extensionUri,
+          'webviews',
+          'codemirror',
+          isDark ? 'material-darker.min.css' : 'eclipse.min.css'
+        );
+
+        this.sidePanelView.webview.postMessage({
+          command: 'setTheme',
+          theme: theme,
+          themeHref: this.sidePanelView.webview.asWebviewUri(themeHref).toString()
+        });
+
       } catch (e) {
         console.warn('⚠️ sidePanelView render failed:', e.message);
         this.sidePanelView = null;
@@ -124,12 +224,30 @@ class SuiteQLViewProvider {
     if (this.tabPanelView?.webview) {
       try {
         this.tabPanelView.webview.html = html;
+
+        // 🆕 Same for tabPanelView
+        const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+        const theme = isDark ? 'material-darker' : 'eclipse';
+        const themeHref = vscode.Uri.joinPath(
+          this.context.extensionUri,
+          'webviews',
+          'codemirror',
+          isDark ? 'material-darker.min.css' : 'eclipse.min.css'
+        );
+
+        this.tabPanelView.webview.postMessage({
+          command: 'setTheme',
+          theme: theme,
+          themeHref: this.tabPanelView.webview.asWebviewUri(themeHref).toString()
+        });
+
       } catch (e) {
         console.warn('⚠️ tabPanelView render failed:', e.message);
         this.tabPanelView = null;
       }
     }
   }
+
 
   renderAndShowAddAccount(context, existingAccount = null) {
     this._render();
@@ -161,30 +279,38 @@ class SuiteQLViewProvider {
         }
 
         body = `
-        <div class="buttons">
-          <button onclick="showJson(${i})">JSON</button>
-          <button onclick="showTable(${i})">Table</button>
-        </div>
-        <div id="json-${i}" class="view json">${jsonView}</div>
-        <div id="table-${i}" class="view table" style="display:none;">${tableView}</div>
-      `;
+      <div class="buttons">
+        <button class="view-btn" onclick="showJson(${i})">JSON</button>
+        <button class="view-btn" onclick="showTable(${i})">Table</button>
+      </div>
+      <div id="json-${i}" class="view json">${jsonView}</div>
+      <div id="table-${i}" class="view table" style="display:none;">${tableView}</div>
+    `;
       }
 
       return `<div class="entry">
-              <div class="query">
-              <strong>Query:</strong> ${q}
-              <button class="delete-btn" onclick="deleteEntry(${i})" title="Delete this query">🗑️</button>
-              </div>
-              ${body}
-            </div>`;
+          <div class="entry-header">
+            <button class="copy-btn" onclick="copyEntry(${i})" title="Copy this query">📋 Copy</button>
+            <button class="delete-btn" onclick="deleteEntry(${i})" title="Delete this query">🗑️ Delete</button>
+          </div>
+          <div class="query">
+            <strong>Query:</strong> <span id="query-text-${i}">${q}</span>
+          </div>
+          ${body}
+        </div>`;
+
     }).join('');
 
     const webview = this.sidePanelView?.webview || this.tabPanelView?.webview;
+
     const cmRoot = vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror');
     const cmCss = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'codemirror.min.css'));
     const cmJs = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'codemirror.min.js'));
     const sqlMode = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'sql.min.js'));
-    const themeCss = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'material-darker.min.css'));
+
+    // 🆕 Detect current VS Code theme
+    const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const themeCss = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, isDark ? 'material-darker.min.css' : 'eclipse.min.css'));
 
     const templatePath = path.join(this.context.extensionPath, 'webviews', 'sidePanelView.html');
     let html = fs.readFileSync(templatePath, 'utf8');
@@ -194,10 +320,11 @@ class SuiteQLViewProvider {
     html = html.replace(/__CM_CSS__/g, cmCss.toString());
     html = html.replace(/__CM_JS__/g, cmJs.toString());
     html = html.replace(/__CM_SQL__/g, sqlMode.toString());
-    html = html.replace(/__CM_THEME__/g, themeCss.toString());
+    html = html.replace(/__CM_THEME__/g, themeCss.toString()); // 🆕 inject correct initial theme immediately
 
     return html;
   }
+
 }
 
 let globalSuiteQLViewProvider;
@@ -206,7 +333,7 @@ let globalSuiteQLViewProvider;
 function activate(context) {
   const provider = new SuiteQLViewProvider(context);
   globalSuiteQLViewProvider = provider;
-
+  provider.startThemeListener();
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('suiteqlView', provider),
     vscode.commands.registerCommand('suiteql.runQuery', () => runQuery(context)),

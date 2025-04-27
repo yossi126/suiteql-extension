@@ -6,12 +6,12 @@
 
 <!-- CodeMirror Styles -->
 <link rel="stylesheet" href="__CM_CSS__">
-<link rel="stylesheet" href="__CM_THEME__"> 
+<link id="theme-style" rel="stylesheet" href="__CM_THEME__">
 <style>
   body {
     font-family: Consolas, monospace;
-    background: #1e1e1e;
-    color: #d4d4d4;
+    /* background: #1e1e1e; */
+    /* color: #d4d4d4; */
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -23,17 +23,17 @@
     padding: 10px;
   }
   .entry {
-    background: #252526;
+    /* background: #252526; */
     padding: 8px;
     margin-bottom: 8px;
     border-left: 4px solid #007acc;
   }
   /* .query { margin-bottom: 6px; } */
-  .buttons { margin-bottom: 6px; }
+  .buttons { margin-bottom: 6px;  margin-top: 10px;}
   .buttons button { margin-right: 4px; }
-  .view { background: #333; padding: 6px; margin-bottom: 10px; }
+  .view { padding: 6px; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #555; padding: 4px 6px; color: #ddd; }
+  th, td { border: 1px solid #555; padding: 4px 6px;  }
 
 #input {
   display: flex;
@@ -71,7 +71,7 @@
   overflow: hidden !important;
   font-family: Consolas, monospace;
   font-size: 1em;
-  border: 1px solid #555;
+  /* border: 1px solid #555; */
   border-radius: 4px;
 }
 
@@ -92,17 +92,46 @@
     to { transform: rotate(360deg); }
   }
 
-  .delete-btn {
-    background: transparent;
-    border: none;
-    color: #f44747;
-    cursor: pointer;
-    margin-left: 8px;
-    font-size: 0.9em;
-  }
-  .delete-btn:hover {
-    color: #ff6e6e;
-  }
+.entry-header {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.copy-btn, .delete-btn {
+  background: #007acc;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.copy-btn:hover, .delete-btn:hover {
+  background: #0593ff;
+}
+
+.view-btn {
+  background: #007acc;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-right: 8px;
+}
+
+.view-btn:hover {
+  background: #0593ff;
+}
+
+
+
 </style>
 </head>
 
@@ -139,6 +168,14 @@ const editor = CodeMirror.fromTextArea(document.getElementById('query'), {
   indentWithTabs: true,
   smartIndent: true,
 });
+
+  window.addEventListener('message', event => {
+    const msg = event.data;
+    if (msg.command === 'setTheme') {
+      editor.setOption('theme', msg.theme);
+      document.getElementById('theme-style').href = msg.themeHref;
+    }
+  });
 
   function scrollToBottom() {
     chat.scrollTop = chat.scrollHeight;
@@ -181,6 +218,22 @@ const editor = CodeMirror.fromTextArea(document.getElementById('query'), {
   function deleteEntry(i) {
     vscode.postMessage({ command: 'deleteEntry', index: i });
   }
+
+function copyEntry(i) {
+  const queryText = document.getElementById(`query-text-${i}`);
+  if (!queryText) return;
+
+  navigator.clipboard.writeText(queryText.textContent)
+    .then(() => {
+      vscode.postMessage({ command: 'copyQuery', message: 'Query copied to clipboard!' });
+    })
+    .catch(err => {
+      console.error('Failed to copy query:', err);
+      vscode.postMessage({ command: 'copyQuery', message: 'Failed to copy query.' });
+    });
+}
+
+
 
   scrollToBottom();
 </script>
