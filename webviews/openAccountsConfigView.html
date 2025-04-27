@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-__NONCE__';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetSuite Accounts Config</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1em;
+    }
+    #json {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+    }
+    #saveBtn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 1em;
+      background: #007acc;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #saveBtn:hover {
+      background: #0593ff;
+    }
+  </style>
+</head>
+<body>
+  <h2>NetSuite Accounts</h2>
+  <textarea id="json" placeholder="Paste JSON here..."></textarea><br>
+  <button id="saveBtn">💾 Save</button>
+
+  <script nonce="__NONCE__">
+    const vscode = acquireVsCodeApi();
+
+    window.addEventListener('message', event => {
+      const msg = event.data;
+      if (msg.command === 'loadAccounts') {
+        document.getElementById('json').value = JSON.stringify(msg.accounts, null, 2);
+      }
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      try {
+        const data = JSON.parse(document.getElementById('json').value);
+        vscode.postMessage({ command: 'saveAccounts', data });
+      } catch (e) {
+        alert('Invalid JSON: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>

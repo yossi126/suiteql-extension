@@ -348,24 +348,16 @@ function activate(context) {
         { enableScripts: true }
       );
 
+      const templatePath = path.join(context.extensionPath, 'webviews', 'openAccountsConfigView.html');
+
+      let html = fs.readFileSync(templatePath, 'utf8');
+      const nonce = getNonce(); // make sure you have a nonce function
+      html = html.replace(/__NONCE__/g, nonce);
+
+      panel.webview.html = html;
+
       const accounts = loadAccounts(context);
-      panel.webview.html = `<!DOCTYPE html>
-        <html><body style="font-family:sans-serif;padding:1em;">
-          <h2>NetSuite Accounts</h2>
-          <textarea id="json" style="width:100%;height:300px;">${JSON.stringify(accounts, null, 2)}</textarea><br><br>
-          <button onclick="save()">💾 Save</button>
-          <script>
-            const vscode = acquireVsCodeApi();
-            function save() {
-              try {
-                const data = JSON.parse(document.getElementById('json').value);
-                vscode.postMessage({ command: 'saveAccounts', data });
-              } catch (e) {
-                alert('Invalid JSON: ' + e.message);
-              }
-            }
-          </script>
-        </body></html>`;
+      panel.webview.postMessage({ command: 'loadAccounts', accounts });
 
       panel.webview.onDidReceiveMessage(async msg => {
         if (msg.command === 'saveAccounts') {

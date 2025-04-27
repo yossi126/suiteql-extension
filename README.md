@@ -26,7 +26,7 @@ If you want to use the RESTlet approach:
 
 ### 2. Open the Extension Sidebar
 
-- Launch the **SuiteQL Runner** sidebar from the activity bar (or run `SuiteQL: Open` from the Command Palette).
+- Launch the **SuiteQL Runner** sidebar from the activity bar (or run `SuiteQL: Focus on SuiteQl Query View` from the Command Palette).
 
 ### 3. Add Your NetSuite Account
 
@@ -41,6 +41,37 @@ Fill in:
   - or: `https://{account_id}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql`
 
 > You can save multiple accounts and switch between them as needed.
+
+---
+
+## 🛠️ Additional Commands
+
+### SuiteQL: Open Accounts Config
+
+- Opens a simple JSON editor with all your saved NetSuite accounts.
+- You can manually edit account details (Account ID, tokens, URL, etc).
+- Useful for quick corrections, bulk changes, or advanced users.
+
+⚡ Changes are applied immediately after saving.
+
+
+### Run SuiteQL Query
+
+- Lets you run a **single quick query** directly from the Command Palette.
+- The result is displayed in the **VS Code Terminal**.
+- It does **not save** the query into the chat/history.
+
+⚡ Ideal for quick one-time lookups or testing simple queries.
+
+---
+
+## 📚 Commands and Usage
+
+| Command                         | Description                                                                 |
+|:--------------------------------|:----------------------------------------------------------------------------|
+| `SuiteQL: Choose Account`       | Select which NetSuite account to use for querying.                         |
+| `SuiteQL: Open Accounts Config` | Edit NetSuite accounts manually as JSON inside a VS Code Webview editor.    |
+| `Run SuiteQL Query`    | Run a quick one-off SuiteQL query and see the result directly in Terminal.  |
 
 ---
 
@@ -59,10 +90,11 @@ This extension uses **OAuth 1.0a** and does not require saving credentials to di
 
 ---
 
-## 💡 Tips
+## 📖 Notes
 
-- For **SuiteTalk**, you don't need to deploy anything in NetSuite. Just use the REST API URL.
-- You can edit or delete saved accounts anytime by clicking the ⚙️ again.
+- RESTlet approach requires deploying the provided Restlet script from [`restlet-example/customscript_suiteql_restlet.js`](https://github.com/yossi126/suiteql-extension/tree/main/restlet-example)
+- SuiteTalk REST API can work without any upload, only needing proper account credentials.
+- Query results are displayed in either JSON view or Table view with easy switching.
 
 ---
 
@@ -73,3 +105,4 @@ If you're a developer cloning this extension:
 ```bash
 npm install
 npm run package
+
