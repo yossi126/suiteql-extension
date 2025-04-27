@@ -179,11 +179,22 @@ class SuiteQLViewProvider {
             </div>`;
     }).join('');
 
+    const webview = this.sidePanelView?.webview || this.tabPanelView?.webview;
+    const cmRoot = vscode.Uri.joinPath(this.context.extensionUri, 'webviews', 'codemirror');
+    const cmCss = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'codemirror.min.css'));
+    const cmJs = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'codemirror.min.js'));
+    const sqlMode = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'sql.min.js'));
+    const themeCss = webview.asWebviewUri(vscode.Uri.joinPath(cmRoot, 'material-darker.min.css'));
+
     const templatePath = path.join(this.context.extensionPath, 'webviews', 'sidePanelView.html');
     let html = fs.readFileSync(templatePath, 'utf8');
 
     html = html.replace(/__NONCE__/g, nonce);
     html = html.replace(/__ENTRIES__/g, entriesHtml);
+    html = html.replace(/__CM_CSS__/g, cmCss.toString());
+    html = html.replace(/__CM_JS__/g, cmJs.toString());
+    html = html.replace(/__CM_SQL__/g, sqlMode.toString());
+    html = html.replace(/__CM_THEME__/g, themeCss.toString());
 
     return html;
   }

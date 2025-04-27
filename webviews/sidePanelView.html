@@ -1,90 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8">
-  <style>
-    body { font-family:Consolas,monospace;background:#1e1e1e;color:#d4d4d4;
-           margin:0;display:flex;flex-direction:column;height:100vh; }
-    #chat { flex:1;overflow-y:auto;padding:10px; }
-    .entry { background:#252526;padding:8px;margin-bottom:8px;border-left:4px solid #007acc; }
-    .query { margin-bottom:6px; }
-    .buttons { margin-bottom:6px; }
-    .buttons button { margin-right:4px; }
-    .view { background:#333;padding:6px;margin-bottom:10px; }
-    table { width:100%;border-collapse:collapse; }
-    th,td { border:1px solid #555;padding:4px 6px;color:#ddd; }
-    #input { display:flex;padding:8px;border-top:1px solid #444; }
-    #query { flex:1;padding:6px;background:#2d2d2d;color:#ccc;border:1px solid #555; }
-    #run { margin-left:8px;padding:6px 12px; }
-    .spinner { margin-left:8px;border:4px solid #444;border-top:4px solid #007acc;
-               border-radius:50%;width:18px;height:18px;animation:spin 1s linear infinite;
-               display:none; }
-    @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-    .delete-btn {
-  background: transparent;
+<head>
+<meta charset="UTF-8">
+<title>SuiteQL Runner</title>
+
+<!-- CodeMirror Styles -->
+<link rel="stylesheet" href="__CM_CSS__">
+<link rel="stylesheet" href="__CM_THEME__"> 
+<style>
+  body {
+    font-family: Consolas, monospace;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+  }
+  .entry {
+    background: #252526;
+    padding: 8px;
+    margin-bottom: 8px;
+    border-left: 4px solid #007acc;
+  }
+  /* .query { margin-bottom: 6px; } */
+  .buttons { margin-bottom: 6px; }
+  .buttons button { margin-right: 4px; }
+  .view { background: #333; padding: 6px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #555; padding: 4px 6px; color: #ddd; }
+
+#input {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-top: 1px solid #444;
+  gap: 8px;
+}
+
+#button-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+#run {
+  padding: 6px 12px;
+  background: #007acc;
   border: none;
-  color: #f44747;
+  color: white;
+  border-radius: 4px;
+  font-size: 1em;
   cursor: pointer;
-  margin-left: 8px;
-  font-size: 0.9em;
 }
-.delete-btn:hover {
-  color: #ff6e6e;
+
+#run:hover {
+  background: #0593ff;
 }
-  </style>
+.CodeMirror {
+  width: 100%;
+  height: 12em;
+  max-height: 12em;
+  background: transparent;
+  overflow: hidden !important;
+  font-family: Consolas, monospace;
+  font-size: 1em;
+  border: 1px solid #555;
+  border-radius: 4px;
+}
+
+
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 4px solid #444;
+  border-top: 4px solid #007acc;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: none;
+}
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .delete-btn {
+    background: transparent;
+    border: none;
+    color: #f44747;
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 0.9em;
+  }
+  .delete-btn:hover {
+    color: #ff6e6e;
+  }
+</style>
 </head>
+
 <body>
+
 <div id="chat">__ENTRIES__</div>
 
-  <div id="input">
-    <input id="query" placeholder="Enter SuiteQL query…" />
-    <button id="run">Run</button>
+<div id="input">
+  <div id="button-row">
+    <button id="run">▶ Run</button>
     <div class="spinner" id="spinner"></div>
   </div>
+
+  <div id="input-wrapper">
+    <textarea id="query" placeholder="Enter SuiteQL query…"></textarea>
+  </div>
+</div>
+
+<!-- CodeMirror Scripts -->
+<script src="__CM_JS__"></script>
+<script src="__CM_SQL__"></script>
+
 <script nonce="__NONCE__">
-    const vscode = acquireVsCodeApi();
-    const chat    = document.getElementById('chat');
-    const input   = document.getElementById('query');
-    const runBtn  = document.getElementById('run');
-    const spinner = document.getElementById('spinner');
+  const vscode = acquireVsCodeApi();
+  const chat    = document.getElementById('chat');
+  const runBtn  = document.getElementById('run');
+  const spinner = document.getElementById('spinner');
 
-    function scrollToBottom() { chat.scrollTop = chat.scrollHeight; }
+const editor = CodeMirror.fromTextArea(document.getElementById('query'), {
+  mode: 'text/x-sql',
+  theme: 'material-darker',
+  lineNumbers: true,
+  viewportMargin: Infinity,
+  indentWithTabs: true,
+  smartIndent: true,
+});
 
-    runBtn.addEventListener('click', () => {
-      const q = input.value.trim(); if (!q) return;
+  function scrollToBottom() {
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function runQuery() {
+    const q = editor.getValue().trim();
+    if (!q) return;
+    spinner.style.display = 'inline-block';
+    runBtn.disabled = true;
+    vscode.postMessage({ command: 'runQuery', query: q });
+    editor.setValue(''); // clear after running
+  }
+
+  runBtn.addEventListener('click', runQuery);
+
+
+  window.addEventListener('message', e => {
+    const msg = e.data;
+    if (msg.command === 'loading') {
       spinner.style.display = 'inline-block';
       runBtn.disabled = true;
-      vscode.postMessage({ command:'runQuery', query:q });
-      input.value = '';
-    });
-
-    window.addEventListener('message', e => {
-      const msg = e.data;
-      if (msg.command === 'loading') {
-        spinner.style.display = 'inline-block';
-        runBtn.disabled = true;
-        return;
-      }
-      spinner.style.display = 'none';
-      runBtn.disabled = false;
-      if (msg.command === 'showResults' || msg.command === 'showError') {
-        scrollToBottom();
-      }
-    });
-
-    function showJson(i) {
-      document.getElementById('json-'+i).style.display = '';
-      document.getElementById('table-'+i).style.display = 'none';
+      return;
     }
-    function showTable(i) {
-      document.getElementById('json-'+i).style.display = 'none';
-      document.getElementById('table-'+i).style.display = '';
+    spinner.style.display = 'none';
+    runBtn.disabled = false;
+    if (msg.command === 'showResults' || msg.command === 'showError') {
+      scrollToBottom();
     }
+  });
 
-    function deleteEntry(i) {
-  vscode.postMessage({ command: 'deleteEntry', index: i });
-}
+  function showJson(i) {
+    document.getElementById('json-'+i).style.display = '';
+    document.getElementById('table-'+i).style.display = 'none';
+  }
+  function showTable(i) {
+    document.getElementById('json-'+i).style.display = 'none';
+    document.getElementById('table-'+i).style.display = '';
+  }
+  function deleteEntry(i) {
+    vscode.postMessage({ command: 'deleteEntry', index: i });
+  }
 
-    scrollToBottom();
-  </script>
+  scrollToBottom();
+</script>
+
 </body>
 </html>
