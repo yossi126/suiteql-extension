@@ -15,13 +15,17 @@ A Visual Studio Code extension that lets you write and run SuiteQL queries direc
 
 ## 🚀 Getting Started
 
+Before you start, you must be in the rule of Administrator in netSuite and to create an Access Token to get `Consumer Key` and `Consumer Secret` and Integrations record to get `Token` and `Token Secret` in netSuite
+
+You can find information and example [`here`](https://youtu.be/bM7KqjRr-h8?si=q1zG7PZQQjj6GhDr) 
+
 ### 1. Upload the RESTlet (for RESTlet mode)
 
 If you want to use the RESTlet approach:
 
 1. Open NetSuite.
 2. Go to: **Customizations → Scripting → Scripts → New**
-3. Upload the `suiteql.restlet.js` (provided in the extension instructions).
+3. Upload the [`customscript_suiteql_restlet.js`](https://github.com/yossi126/suiteql-extension/tree/main/restlet-example)
 4. Deploy the script and note the URL.
 
 ### 2. Open the Extension Sidebar
@@ -42,7 +46,8 @@ Fill in:
 
 > You can save multiple accounts and switch between them as needed.
 
----
+
+![Demo GIF](resources/example.gif)
 
 ## 🛠️ Additional Commands
 
@@ -92,6 +97,7 @@ This extension uses **OAuth 1.0a** and does not require saving credentials to di
 
 ## 📖 Notes
 
+- You must have the rule of Administrator in netSuite and to create an Access Token and Integrations in netSuite
 - RESTlet approach requires deploying the provided Restlet script from [`restlet-example/customscript_suiteql_restlet.js`](https://github.com/yossi126/suiteql-extension/tree/main/restlet-example)
 - SuiteTalk REST API can work without any upload, only needing proper account credentials.
 - Query results are displayed in either JSON view or Table view with easy switching.
