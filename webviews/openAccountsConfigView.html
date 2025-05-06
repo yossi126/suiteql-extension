@@ -32,8 +32,10 @@
 </head>
 <body>
   <h2>NetSuite Accounts</h2>
-  <textarea id="json" placeholder="Paste JSON here..."></textarea><br>
-  <button id="saveBtn">💾 Save</button>
+<textarea id="json" placeholder="Paste JSON here..."></textarea><br>
+<div id="errorMsg" style="color: red; display: none; margin-top: 10px;"></div>
+<button id="saveBtn">💾 Save</button>
+
 
   <script nonce="__NONCE__">
     const vscode = acquireVsCodeApi();
@@ -45,14 +47,18 @@
       }
     });
 
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      try {
-        const data = JSON.parse(document.getElementById('json').value);
-        vscode.postMessage({ command: 'saveAccounts', data });
-      } catch (e) {
-        alert('Invalid JSON: ' + e.message);
-      }
-    });
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const errorMsg = document.getElementById('errorMsg');
+  try {
+    const data = JSON.parse(document.getElementById('json').value);
+    vscode.postMessage({ command: 'saveAccounts', data });
+    errorMsg.style.display = 'none'; // clear error if save is valid
+  } catch (e) {
+    errorMsg.textContent = 'Invalid JSON: ' + e.message;
+    errorMsg.style.display = 'block';
+  }
+});
+
   </script>
 </body>
 </html>

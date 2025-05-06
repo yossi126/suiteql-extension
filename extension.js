@@ -2,9 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const vscode = require('vscode');
 const { chooseAccount } = require('./commands/chooseAccount');
-const { openEditor } = require('./commands/openEditor');
-const { runQuery } = require('./commands/runQuery');
-const { sendSignedRequestWithAccount } = require('./utils/suiteqlRequest');
+// const { runQuery } = require('./commands/runQuery');
+const { sendRequestWithOauth1 } = require('./auth/oauth1');
+const { sendRequestWithOauth2 } = require('./auth/oauth2');
 const { loadAccounts, saveAccounts } = require('./utils/authManager');
 
 function getNonce() {
@@ -147,8 +147,29 @@ class SuiteQLViewProvider {
     this._postMessageAll({ command: 'loading' });
 
     try {
-      entry.result = await sendSignedRequestWithAccount(this.context, query);
+      const accounts = loadAccounts(this.context);
+      const account = accounts.find(acc => acc.id === currentId);
+
+      if (!account) throw new Error('No account selected.');
+
+      console.log(`Running query with account: ${account.displayName} (auth: ${account.auth})`);
+
+      if (account.auth === 'oauth1') {
+        entry.result = await sendRequestWithOauth1(this.context, query);
+
+      } else if (account.auth === 'oauth2') {
+        const webviews = [];
+        if (this.sidePanelView?.webview) webviews.push(this.sidePanelView.webview);
+        if (this.tabPanelView?.webview) webviews.push(this.tabPanelView.webview);
+
+        entry.result = await sendRequestWithOauth2(this.context, query, webviews);
+
+      } else {
+        throw new Error(`Unsupported auth type: ${account.auth}`);
+      }
+
     } catch (err) {
+      console.error('Error running query:', err);
       entry.error = err.message;
     }
 
@@ -159,6 +180,7 @@ class SuiteQLViewProvider {
     this._render();
     this._postMessageAll({ command: 'showResults' });
   }
+
 
   async _handleDelete(index) {
     const currentId = this.context.globalState.get('suiteql.current');
@@ -336,10 +358,21 @@ function activate(context) {
   provider.startThemeListener();
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('suiteqlView', provider),
-    vscode.commands.registerCommand('suiteql.runQuery', () => runQuery(context)),
+    // vscode.commands.registerCommand('suiteql.runQuery', () => runQuery(context)),
     vscode.commands.registerCommand('suiteql.chooseAccount', () => chooseAccount(context, provider)),
     vscode.commands.registerCommand('suiteql.chooseAccountGear', () => chooseAccount(context, provider)),
-    vscode.commands.registerCommand('suiteql.openEditor', () => openEditor(context, provider)),
+
+    vscode.commands.registerCommand('suiteql.openEditor', () => {
+      const panel = vscode.window.createWebviewPanel(
+        'suiteqlQueryEditor',
+        'SuiteQL Query Editor',
+        vscode.ViewColumn.One,
+        { enableScripts: true, retainContextWhenHidden: true }
+      );
+      provider.setTabPanel(panel);
+    }),
+
+
     vscode.commands.registerCommand('suiteql.openAccountsConfig', () => {
       const panel = vscode.window.createWebviewPanel(
         'suiteqlAccountsConfig',

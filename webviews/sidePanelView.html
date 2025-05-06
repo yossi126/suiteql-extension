@@ -195,17 +195,23 @@ const editor = CodeMirror.fromTextArea(document.getElementById('query'), {
 
   window.addEventListener('message', e => {
     const msg = e.data;
+    // Handle loading spinner
     if (msg.command === 'loading') {
-      spinner.style.display = 'inline-block';
-      runBtn.disabled = true;
-      return;
-    }
-    spinner.style.display = 'none';
-    runBtn.disabled = false;
-    if (msg.command === 'showResults' || msg.command === 'showError') {
-      scrollToBottom();
+        spinner.style.display = 'inline-block';
+        runBtn.disabled = true;
+    } 
+    else if (msg.command === 'stopLoading') {
+        console.log('Received stopLoading');
+        spinner.style.display = 'none';
+        runBtn.disabled = false;
+    } 
+    else if (msg.command === 'showResults' || msg.command === 'showError') {
+        spinner.style.display = 'none';
+        runBtn.disabled = false;
+        scrollToBottom();
     }
   });
+
 
   function showJson(i) {
     document.getElementById('json-'+i).style.display = '';

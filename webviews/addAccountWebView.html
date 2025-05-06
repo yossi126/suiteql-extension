@@ -44,110 +44,179 @@
       border-radius: 4px;
     }
     span.required { color: #e06c75; }
+
+    small.info {
+  color: #aaa;
+  font-size: 0.85em;
+  margin-top: 4px;
+  display: block;
+}
   </style>
 </head>
 <body>
   <h2 id="formTitle">Add NetSuite Account</h2>
   <input type="hidden" id="accountId" value="">
 
+<label>
+  <span>Authentication Method <span class="required">*</span></span>
+  <select id="authType" onchange="toggleAuthFields()">
+    <option value="oauth1">OAuth 1.0a</option>
+    <option value="oauth2">OAuth 2.0</option>
+  </select>
+</label>
   <label>
+
     <span>Display Name</span>
+    <small class="info">A user-friendly name for this account.</small>
     <input type="text" id="displayName" />
+
   </label>
 
   <label>
     <span>Account ID (Realm) <span class="required">*</span></span>
+    <small class="info">The unique account ID (realm) of your NetSuite account.</small>
     <input type="text" id="account" />
     <small class="error" id="error-account">Account ID is required.</small>
   </label>
 
   <label>
-    <span>SuiteQL URL <span class="required">*</span></span>
+    <span>RESTlet / SuiteTalk REST URL <span class="required">*</span></span>
+    <small class="info">The base URL for RESTlet or SuiteTalk REST services.</small>
     <input type="text" id="url" />
     <small class="error" id="error-url">URL is required.</small>
   </label>
 
   <label>
     <span>Consumer Key <span class="required">*</span></span>
+    <small class="info">The Consumer Key provided by NetSuite Integrations Record.</small>
     <input type="text" id="consumerKey" />
     <small class="error" id="error-consumerKey">Consumer Key is required.</small>
   </label>
 
   <label>
     <span>Consumer Secret <span class="required">*</span></span>
+    <small class="info">The Consumer Secret provided by NetSuite Integrations Record.</small>
     <input type="text" id="consumerSecret" />
     <small class="error" id="error-consumerSecret">Consumer Secret is required.</small>
   </label>
 
+  <div class="oauth2-fields" style="display: none;">
+  <label>
+    <span>Redirect URI <span class="required">*</span></span>
+    <small class="info">The Redirect URI Must Be The Same As In NetSuite Integrations Record You Created.</small>
+    <input type="text" id="redirectUri" />
+    <small class="error" id="error-redirectUri">Redirect URI is required.</small>
+  </label>
+</div>
+
+  
+<div class="oauth1-fields">
   <label>
     <span>Token <span class="required">*</span></span>
+    <small class="info">The OAuth 1.0a Token For Authentication, From The Access Token Record.</small>
     <input type="text" id="token" />
     <small class="error" id="error-token">Token is required.</small>
   </label>
 
   <label>
     <span>Token Secret <span class="required">*</span></span>
+    <small class="info">The OAuth 1.0a Token Secret For Authentication, From The Access Token Record.</small>
     <input type="text" id="tokenSecret" />
     <small class="error" id="error-tokenSecret">Token Secret is required.</small>
   </label>
+</div>
 
   <button onclick="save()">
     <span id="saveButtonText">Save</span> Account
   </button>
 
-  <script>
-    const vscode = acquireVsCodeApi();
-    let isEdit = false;
+<script>
+  const vscode = acquireVsCodeApi();
+  let isEdit = false;
 
-    // listen for edit message
-    window.addEventListener('message', event => {
-      const msg = event.data;
-      if (msg.command === 'editAccount' && msg.account) {
-        isEdit = true;
-        const acct = msg.account;
-        document.getElementById('formTitle').innerText = 'Edit NetSuite Account';
-        document.getElementById('accountId').value = acct.id || '';
-        document.getElementById('displayName').value = acct.displayName || '';
-        document.getElementById('account').value = acct.account || '';
-        document.getElementById('url').value = acct.url || '';
-        document.getElementById('consumerKey').value = acct.consumerKey || '';
-        document.getElementById('consumerSecret').value = acct.consumerSecret || '';
-        document.getElementById('token').value = acct.token || '';
-        document.getElementById('tokenSecret').value = acct.tokenSecret || '';
-        document.getElementById('saveButtonText').innerText = 'Update';
-      }
-    });
-
-    function save() {
-      // validate
-      const required = ['account','url','consumerKey','consumerSecret','token','tokenSecret'];
-      let ok = true;
-      required.forEach(id => {
-        const el = document.getElementById(id);
-        const err = document.getElementById('error-' + id);
-        if (!el.value.trim()) {
-          el.classList.add('invalid');
-          err.style.display = 'block';
-          ok = false;
-        } else {
-          el.classList.remove('invalid');
-          err.style.display = 'none';
-        }
-      });
-      if (!ok) return;
-
-      const data = {
-        id: document.getElementById('accountId').value || crypto.randomUUID(),
-        displayName: document.getElementById('displayName').value.trim() || document.getElementById('account').value.trim(),
-        account: document.getElementById('account').value.trim(),
-        url: document.getElementById('url').value.trim(),
-        consumerKey: document.getElementById('consumerKey').value.trim(),
-        consumerSecret: document.getElementById('consumerSecret').value.trim(),
-        token: document.getElementById('token').value.trim(),
-        tokenSecret: document.getElementById('tokenSecret').value.trim()
-      };
-      vscode.postMessage({ command: 'saveAccount', data });
+  window.addEventListener('message', event => {
+    const msg = event.data;
+    if (msg.command === 'editAccount' && msg.account) {
+      isEdit = true;
+      const acct = msg.account;
+      document.getElementById('formTitle').innerText = 'Edit NetSuite Account';
+      document.getElementById('accountId').value = acct.id || '';
+      document.getElementById('displayName').value = acct.displayName || '';
+      document.getElementById('account').value = acct.account || '';
+      document.getElementById('url').value = acct.url || '';
+      document.getElementById('consumerKey').value = acct.consumerKey || '';
+      document.getElementById('consumerSecret').value = acct.consumerSecret || '';
+      document.getElementById('token').value = acct.token || '';
+      document.getElementById('tokenSecret').value = acct.tokenSecret || '';
+      document.getElementById('redirectUri').value = acct.redirectUri || '';
+      document.getElementById('authType').value = acct.auth || 'oauth1';
+      toggleAuthFields(); // reflect changes in UI
+      document.getElementById('saveButtonText').innerText = 'Update';
     }
-  </script>
+  });
+
+function save() {
+  const authType = document.getElementById('authType').value;
+  let required = ['account', 'url', 'consumerKey', 'consumerSecret'];
+
+  if (authType === 'oauth1') {
+    required = required.concat(['token', 'tokenSecret']);
+  }else if (authType === 'oauth2') {
+  required.push('redirectUri');
+}
+
+  let ok = true;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    const err = document.getElementById('error-' + id);
+    if (!el || !el.value.trim()) {
+      if (el) el.classList.add('invalid');
+      if (err) err.style.display = 'block';
+      ok = false;
+    } else {
+      if (el) el.classList.remove('invalid');
+      if (err) err.style.display = 'none';
+    }
+  });
+  if (!ok) return;
+
+  const data = {
+    id: document.getElementById('accountId').value || crypto.randomUUID(),
+    displayName: document.getElementById('displayName').value.trim() || document.getElementById('account').value.trim(),
+    account: document.getElementById('account').value.trim(),
+    url: document.getElementById('url').value.trim(),
+    consumerKey: document.getElementById('consumerKey').value.trim(),
+    consumerSecret: document.getElementById('consumerSecret').value.trim(),
+    token: document.getElementById('token') ? document.getElementById('token').value.trim() : '',
+    tokenSecret: document.getElementById('tokenSecret') ? document.getElementById('tokenSecret').value.trim() : '',
+    redirectUri: document.getElementById('redirectUri').value.trim(),
+    auth: authType
+  };
+
+  vscode.postMessage({ command: 'saveAccount', data });
+}
+
+function toggleAuthFields() {
+  const authType = document.getElementById('authType').value;
+  const oauth1Fields = document.querySelectorAll('.oauth1-fields');
+  const oauth2Fields = document.querySelectorAll('.oauth2-fields');
+
+  oauth1Fields.forEach(el => {
+    el.style.display = authType === 'oauth1' ? 'block' : 'none';
+  });
+  oauth2Fields.forEach(el => {
+    el.style.display = authType === 'oauth2' ? 'block' : 'none';
+  });
+}
+
+// Add the listener to run when selecting a different auth type
+document.getElementById('authType').addEventListener('change', toggleAuthFields);
+
+// Run initially in case of edit mode
+toggleAuthFields();
+
+
+</script>
+
 </body>
 </html>

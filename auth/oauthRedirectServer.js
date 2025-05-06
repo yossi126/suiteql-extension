@@ -48,7 +48,7 @@ function startRedirectServer(expectedState, onCodeReceived, onTimeout) {
                 onTimeout();  // ✅ Notify VS Code that timeout happened
             }
             shutdown();
-        }, 10 * 1000);  // 60 seconds
+        }, 60 * 1000);  // 60 seconds
     });
 }
 
