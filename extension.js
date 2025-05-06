@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const vscode = require('vscode');
 const { chooseAccount } = require('./commands/chooseAccount');
-// const { runQuery } = require('./commands/runQuery');
 const { sendRequestWithOauth1 } = require('./auth/oauth1');
 const { sendRequestWithOauth2 } = require('./auth/oauth2');
 const { loadAccounts, saveAccounts } = require('./utils/authManager');

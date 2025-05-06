@@ -31,7 +31,7 @@
     }
     .error {
       color: red;
-      font-size: 0.8em;
+      font-size: 1em;
       display: none;
     }
     button {
@@ -161,11 +161,12 @@ function save() {
 
   if (authType === 'oauth1') {
     required = required.concat(['token', 'tokenSecret']);
-  }else if (authType === 'oauth2') {
-  required.push('redirectUri');
-}
+  } else if (authType === 'oauth2') {
+    required.push('redirectUri');
+  }
 
   let ok = true;
+
   required.forEach(id => {
     const el = document.getElementById(id);
     const err = document.getElementById('error-' + id);
@@ -178,6 +179,26 @@ function save() {
       if (err) err.style.display = 'none';
     }
   });
+
+  // ✅ ADDITION: Extra format check for OAuth2 redirect URI
+  if (authType === 'oauth2') {
+    const redirectUriEl = document.getElementById('redirectUri');
+    const redirectError = document.getElementById('error-redirectUri');
+    const redirectUri = redirectUriEl.value.trim();
+
+    const regex = /^http:\/\/localhost:\d{4}\/callback$/;
+
+    if (!regex.test(redirectUri)) {
+      redirectUriEl.classList.add('invalid');
+      redirectError.textContent = 'Redirect URI must be in format: http://localhost:PORT/callback (4-digit port)';
+      redirectError.style.display = 'block';
+      ok = false;
+    } else {
+      redirectUriEl.classList.remove('invalid');
+      redirectError.style.display = 'none';
+    }
+  }
+
   if (!ok) return;
 
   const data = {
@@ -195,6 +216,7 @@ function save() {
 
   vscode.postMessage({ command: 'saveAccount', data });
 }
+
 
 function toggleAuthFields() {
   const authType = document.getElementById('authType').value;

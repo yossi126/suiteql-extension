@@ -16,7 +16,7 @@ async function sendRequestWithOauth2(context, query, webviews) {
     async function refreshAccessToken(context, account) {
         const clientId = account.consumerKey;
         const clientSecret = account.consumerSecret;
-        const refreshToken = account.refresh_token;
+        const refreshToken = account.refreshToken;
         const tokenUrl = `https://${account.account}.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token`;
 
         const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -61,12 +61,6 @@ async function sendRequestWithOauth2(context, query, webviews) {
         }
 
         // ✅ Update the stored token
-        // const accounts = context.globalState.get('suiteql.accounts', []);
-        // const idx = accounts.findIndex(acc => acc.id === account.id);
-        // if (idx !== -1) {
-        //     accounts[idx].access_token = json.access_token;
-        //     context.globalState.update('suiteql.accounts', accounts);
-        // }
         const accounts = loadAccounts(context);
         const idx = accounts.findIndex(acc => acc.id === account.id);
         if (idx !== -1) {
@@ -262,21 +256,6 @@ async function sendRequestWithOauth2(context, query, webviews) {
     }
 
     // 3️⃣ 🔑 No token yet: Start OAuth2 flow
-    // const state = crypto.randomBytes(16).toString('hex');
-    // const params = new URLSearchParams({
-    //     redirect_uri: account.redirectUri,
-    //     client_id: account.consumerKey,
-    //     response_type: 'code',
-    //     scope: 'rest_webservices restlets',
-    //     state: state
-    // });
-    // const authorizeUrl = `https://${account.account}.app.netsuite.com/app/login/oauth2/authorize.nl?${params.toString()}`;
-
-    // vscode.window.showInformationMessage('Opening browser to authorize NetSuite access…');
-
-    // const open = (await import('open')).default;
-    // await open(authorizeUrl);
-
     const newAccessToken = await startOAuthFlow(context, account, webviews);
     const result = await makeSuiteQLCall(newAccessToken);
     return result;
@@ -302,7 +281,7 @@ async function sendRequestWithOauth2(context, query, webviews) {
         await open(authorizeUrl);
 
         return new Promise((resolve, reject) => {
-            startRedirectServer(state, async (code) => {
+            startRedirectServer(state, context, async (code) => {
                 console.log('✅ Received auth code:', code);
 
                 const tokenUrl = `https://${account.account}.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token`;

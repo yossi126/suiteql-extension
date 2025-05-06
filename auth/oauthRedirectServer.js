@@ -1,11 +1,16 @@
 const express = require('express');
 const http = require('http');
+const { getCurrentAccount } = require('../utils/authManager');
 
 let server;
 let timeoutHandle;
 
-function startRedirectServer(expectedState, onCodeReceived, onTimeout) {
+function startRedirectServer(expectedState, context, onCodeReceived, onTimeout) {
     const app = express();
+    const cfg = getCurrentAccount(context);
+    const redirectUri = cfg.redirectUri
+    const uri = new URL(redirectUri);
+    const PORT = parseInt(uri.port, 10);
 
     app.get('/callback', (req, res) => {
         const { code, state, error } = req.query;
@@ -37,9 +42,9 @@ function startRedirectServer(expectedState, onCodeReceived, onTimeout) {
     });
 
     server = http.createServer(app);
-    const PORT = 3000;
+
     server.listen(PORT, () => {
-        console.log(`OAuth Redirect Server running at http://localhost:${PORT}/callback`);
+        console.log(`OAuth Redirect Server running at ${redirectUri}`);
 
         // ⏳ Set a 60-second timeout to auto-shutdown
         timeoutHandle = setTimeout(() => {
